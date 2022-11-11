@@ -16,6 +16,7 @@
 #include "ganon_boss_key.h"
 #include "extern_ctxt.h"
 #include "weather.h"
+#include "usb.h"
 
 void Gameplay_InitSkybox(z64_game_t* globalCtx, int16_t skyboxId);
 
@@ -25,6 +26,7 @@ void c_init() {
     text_init();
     item_overrides_init();
     models_init();
+    usb_initialize();
 }
 
 void before_game_state_update() {
@@ -39,6 +41,7 @@ void after_game_state_update() {
     draw_dungeon_info(&(z64_ctxt.gfx->overlay));
     draw_triforce_count(&(z64_ctxt.gfx->overlay));
     give_ganon_boss_key();
+    usb_process();
 }
 
 void before_skybox_init(z64_game_t* game, int16_t skyboxId) {
