@@ -19,6 +19,7 @@
 #include "weather.h"
 #include "textures.h"
 #include "scene.h"
+#include "usb.h"
 
 void Gameplay_InitSkybox(z64_game_t* globalCtx, int16_t skyboxId);
 
@@ -30,6 +31,7 @@ void c_init() {
     override_flags_init();
     models_init();
     init_textures();
+    usb_initialize();
 }
 
 void before_game_state_update() {
@@ -45,6 +47,7 @@ void after_game_state_update() {
     draw_triforce_count(&(z64_ctxt.gfx->overlay));
     draw_illegal_model_text(&(z64_ctxt.gfx->overlay));
     give_ganon_boss_key();
+    usb_process();
 }
 
 void before_skybox_init(z64_game_t* game, int16_t skyboxId) {
