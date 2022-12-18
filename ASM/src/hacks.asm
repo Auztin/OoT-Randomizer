@@ -19,7 +19,7 @@
     j       after_game_state_update
     nop
 
-; 
+;
 .org 0x8009CED0
     jal     before_skybox_init
 
@@ -39,7 +39,7 @@ Gameplay_InitSkybox:
 ;==================================================================================================
 
 //reserve the audio thread's heap
-.org 0x800C7DDC 
+.org 0x800C7DDC
 .area 0x1C
     lui     at, hi(AUDIO_THREAD_INFO_MEM_START)
     lw      a0, lo(AUDIO_THREAD_INFO_MEM_START)(at)
@@ -132,7 +132,7 @@ Gameplay_InitSkybox:
 ; Here we overwrite part of transition effect case 0
 
 @check_if_object_loaded:
-    
+
     li      at, 0x117A4 //object table
     addu    a0, a0, at
     jal     0x80081628          //check if object file is loaded
@@ -140,7 +140,7 @@ Gameplay_InitSkybox:
     b       @return_check_if_object_loaded
     nop
 
-; Optimize transition effect 0 so that the routine above still fits in the function 
+; Optimize transition effect 0 so that the routine above still fits in the function
 @transition_0_jump:
     lui     at, 0x800A
     addiu   t7, at, 0x8218
@@ -371,7 +371,7 @@ SRAM_SLOTS:
 .orga 0xB5D6BE ; Address in ROM of the enitem00 init params
     .halfword 0x01AC
 
-; Increase the size of pot instances to store chest type 
+; Increase the size of pot instances to store chest type
 .orga 0xDE8A5E ; Address in ROM of the ObjTsubo init params
     .halfword 0x01A0 ; New data starts at 0x0190
 
@@ -425,7 +425,7 @@ SRAM_SLOTS:
     addiu   at, r0, 0x0003
     .skip 4
     nop
-    
+
 ; Override the drop_id convert function s16 func_8001F404(s16 dropId) from decomp
 .orga 0xA89490 ; in memory 0x80013530
     j get_override_drop_id
@@ -437,7 +437,7 @@ SRAM_SLOTS:
 ;   addiu   at, r0, 0x0011
 ;   beq     v0, at, 0x80013888
 ;   sh      t7, 0x014a(s2)
-;   addiu   at, r0, 0x0006      
+;   addiu   at, r0, 0x0006
 ;   beq     v0, at, 0x80013888
 ;   addiu   at, r0, 0x0007
 ;   beq     v0, at, 0x80013888
@@ -487,7 +487,7 @@ SRAM_SLOTS:
 .orga 0xDFA520
     j		EnTuboTrap_DropCollectible_Hack
     nop
-    
+
 
 ; Hack ObjKibako2_Init (Large Crates) to not delete our extended flag
 .orga 0xEC832C
@@ -916,10 +916,10 @@ end_of_recovery_draw:
 
 .orga 0xBA1980 ; In memory: 0x803A5780
     ori     t0, r0, 0x00C8 ; was: addiu t0, t9, 0xFFE7
-    
+
 .orga 0xBA19DC ; In memory: 0x803A57DC
     nop ; was: sh r0, 0x4A6C (t2)
-    
+
 .orga 0xBA1E20 ; In memory: 0x803A5C20
     ori     t5, r0, 0x00C8 ; was: addiu t5, t4, 0x0019
 
@@ -1360,7 +1360,7 @@ skip_GS_BGS_text:
 .orga 0xC0E77C
     jal     empty_bomb
     sw      r0, 0x0428(v0)
-    
+
 ;==================================================================================================
 ; Damage Multiplier
 ;==================================================================================================
@@ -1942,14 +1942,14 @@ skip_GS_BGS_text:
 ;==================================================================================================
 ;
 ;manually set next entrance and fade out type
-.orga 0xBEA044 
+.orga 0xBEA044
    jal      warp_speedup
    nop
 
 .orga 0xB10CC0 ;set fade in type after the warp
     jal     set_fade_in
     lui     at, 0x0001
-   
+
 
 ;==================================================================================================
 ; Dampe Digging Fix
@@ -1988,7 +1988,7 @@ skip_GS_BGS_text:
 
 
 ;==================================================================================================
-; Extended Objects Table 
+; Extended Objects Table
 ;==================================================================================================
 
 ; extends object table lookup for on chest open
@@ -2033,7 +2033,7 @@ skip_GS_BGS_text:
 .orga 0xEF373C
     jal cow_bottle_check
     nop
-    
+
 ;==================================================================================================
 ; Make Bunny Hood like Majora's Mask
 ;==================================================================================================
@@ -2045,7 +2045,7 @@ skip_GS_BGS_text:
     nop
 
 ;==================================================================================================
-; Prevent hyrule guards from casuing a softlock if they're culled 
+; Prevent hyrule guards from casuing a softlock if they're culled
 ;==================================================================================================
 .orga 0xE24E7C
     jal guard_catch
@@ -2107,7 +2107,7 @@ skip_GS_BGS_text:
     nop
     lw      ra, 0x0000 (sp)
     nop
-    
+
 
 ;==================================================================================================
 ; Add ability to control Lake Hylia's water level
@@ -2645,7 +2645,7 @@ skip_GS_BGS_text:
 ; Prevent Carpenter Boss Softlock
 ;==================================================================================================
 ; Replaces: or      a1, s1, r0
-;           addiu   a2, r0, 0x22 
+;           addiu   a2, r0, 0x22
 .orga 0xE0EC50
     jal     prevent_carpenter_boss_softlock
     or      a1, s1, r0
@@ -2655,9 +2655,9 @@ skip_GS_BGS_text:
 ;==================================================================================================
 ; this hack sets the learning song ID to 0 (minuet) which forces the playback to be skipped.
 ; this change does not affect the value passed to Item_Give, so you still recieve the right song.
-; this allows other actors to be responsible for showing the "you learned" text and avoids undesireable 
+; this allows other actors to be responsible for showing the "you learned" text and avoids undesireable
 ; effects like suns song playback skipping time
-; 
+;
 ; Replaces: sh      a2, 0x63ED(at)
 .orga 0xB55428
     sh      r0, 0x63ED(at)
@@ -2734,7 +2734,7 @@ skip_GS_BGS_text:
 ;==================================================================================================
 ; Override Links call to SkelAnime_ChangeLinkAnimDefaultStop
 ;==================================================================================================
-;override the call to SkelAnime_ChangeLinkAnimDefaultStop in 80388BBC to allow for 
+;override the call to SkelAnime_ChangeLinkAnimDefaultStop in 80388BBC to allow for
 ;special cases when changing links animation
 ; Replaces: jal      0x8008C178
 .orga 0xBCDBD8
@@ -2768,7 +2768,7 @@ skip_GS_BGS_text:
 
 ;case 4: outside ganons castle
 ; Replaces: jal       0x8006B6FC
-.orga 0xCDF420 
+.orga 0xCDF420
     jal     heavy_block_set_switch
 
 ;set links position and angle to the center of the block as its being lifted
@@ -2842,9 +2842,9 @@ skip_GS_BGS_text:
     jal    malon_show_text  ;dont set next cutscene index, also show text if song
 .skip 4 * 2
     nop        ;dont set transition fade type
-.skip 4 * 4    
-    nop        ;dont set load flag 
-.skip 4 * 2  
+.skip 4 * 4
+    nop        ;dont set load flag
+.skip 4 * 2
     j      malon_check_give_item
 
 ;set relevant flags and restore malon so she can talk again
@@ -2973,8 +2973,8 @@ skip_GS_BGS_text:
 ;Kill Door of Time collision when the cutscene starts
 ;===================================================================================================
 .orga 0xCCE9A4
-    jal     kill_door_of_time_col ; Replaces lui     $at, 0x3F80 
-    lw      a0, 0x011C(s0) ; replaces mtc1    $at, $f6 
+    jal     kill_door_of_time_col ; Replaces lui     $at, 0x3F80
+    lw      a0, 0x011C(s0) ; replaces mtc1    $at, $f6
 
 ;===================================================================================================
 ; Don't grey out Goron's Bracelet as adult.
@@ -3040,7 +3040,7 @@ skip_GS_BGS_text:
 	nop
 	nop
 	nop
-	
+
 .orga 0xD55A80
 	nop
 	nop

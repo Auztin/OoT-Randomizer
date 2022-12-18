@@ -14,6 +14,69 @@ typedef void(*usebutton_t)(z64_game_t *game, z64_link_t *link, uint8_t item, uin
 #define z64_playsfx   ((playsfx_t)      0x800C806C)
 #define z64_usebutton ((usebutton_t)    0x8038C9A0)
 
+// uint8_t child_swap_c_items[3] = {0xFF, 0xFF, 0xFF};
+// uint8_t adult_swap_c_items[3] = {0xFF, 0xFF, 0xFF};
+uint8_t* adult_swap_c_items = ((uint8_t*)&(z64_file.scene_flags[0x2A].unk_00_))+1;
+uint8_t* child_swap_c_items = ((uint8_t*)&(z64_file.scene_flags[0x2B].unk_00_))+1;
+uint8_t was_child_trade_slot[3] = {0, 0, 0};
+
+void handle_swap_c_items(uint8_t* swap) {
+    uint8_t buffer[3];
+    uint8_t buffer_child_trade_slot[3];
+    uint8_t is_child_trade_slot;
+    for (uint8_t i = 0; i < 3; i++) {
+        is_child_trade_slot = 0;
+        switch ((uint8_t)z64_file.button_items[i+1]) {
+            case 0x38:
+            case 0x39:
+            case 0x3A:
+                buffer[i] = z64_file.button_items[i+1];
+                break;
+            case 0x23:
+            case 0x24:
+            case 0x25:
+            case 0x26:
+            case 0x27:
+            case 0x28:
+            case 0x29:
+            case 0x2A:
+            case 0x2B:
+            case 0x2C:
+                is_child_trade_slot = 1;
+            default:
+                if (is_child_trade_slot) buffer_child_trade_slot[i] = 1;
+                else buffer_child_trade_slot[i] = 0;
+                buffer[i] = z64_file.c_button_slots[i];
+        }
+
+        switch (swap[i]) {
+            case 0x38:
+            case 0x39:
+            case 0x3A:
+                z64_file.c_button_slots[i] = 0x03;
+                z64_file.button_items[i+1] = swap[i];
+                break;
+            default:
+                z64_file.c_button_slots[i] = swap[i];
+                if (z64_file.link_age == 0 && was_child_trade_slot[i]) z64_file.button_items[i+1] = z64_file.items[Z64_SLOT_CHILD_TRADE];
+                else z64_file.button_items[i+1] = swap[i] == 0xFF ? 0xFF : z64_file.items[swap[i]];
+        }
+    }
+
+    if (swap[0] != 0xFF) z64_UpdateItemButton(&z64_game, 1);
+    if (swap[1] != 0xFF) z64_UpdateItemButton(&z64_game, 2);
+    if (swap[2] != 0xFF) z64_UpdateItemButton(&z64_game, 3);
+
+    swap[0] = buffer[0];
+    swap[1] = buffer[1];
+    swap[2] = buffer[2];
+    was_child_trade_slot[0] = buffer_child_trade_slot[0];
+    was_child_trade_slot[1] = buffer_child_trade_slot[1];
+    was_child_trade_slot[2] = buffer_child_trade_slot[2];
+
+    z64_playsfx(0x835, (z64_xyzf_t*)0x80104394, 0x04, (float*)0x801043A0, (float*)0x801043A0, (float*)0x801043A8);
+}
+
 void handle_dpad() {
 
     pad_t pad_pressed = z64_game.common.input[0].pad_pressed;
@@ -34,11 +97,21 @@ void handle_dpad() {
                 z64_UpdateEquipment(&z64_game, &z64_link);
                 z64_playsfx(0x835, (z64_xyzf_t*)0x80104394, 0x04, (float*)0x801043A0, (float*)0x801043A0, (float*)0x801043A8);
             }
+
+            if (pad_pressed.du) {
+                if (z64_file.scene_flags[0x2A].unk_00_ == 0) z64_file.scene_flags[0x2A].unk_00_ = 0x00FFFFFF;
+                handle_swap_c_items(adult_swap_c_items);
+            }
         }
 
         if (z64_file.link_age == 1) {
             if (pad_pressed.dr && CAN_USE_CHILD_TRADE) {
                 z64_usebutton(&z64_game,&z64_link,z64_file.items[Z64_SLOT_CHILD_TRADE], 2);
+            }
+            
+            if (pad_pressed.du) {
+                if (z64_file.scene_flags[0x2B].unk_00_ == 0) z64_file.scene_flags[0x2B].unk_00_ = 0x00FFFFFF;
+                handle_swap_c_items(child_swap_c_items);
             }
         }
 
@@ -114,4 +187,3 @@ void draw_dpad() {
         gDPPipeSync(db->p++);
     }
 }
-
