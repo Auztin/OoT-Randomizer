@@ -1,7 +1,7 @@
 @fanfare_audioseq_size equ 0x1000
 @fanfare_audiobank_size equ 0x4800
 @fanfare_unk_size equ 0
-@bgm_audioseq_size equ 0x7000
+@bgm_audioseq_size equ 0xE000
 @bgm_audiobank_size equ 0x4800
 @bgm_unk_size equ 0
 
@@ -24,6 +24,25 @@ AUDIO_THREAD_INFO_MEM_START:
 .word AUDIO_THREAD_MEM_START
 AUDIO_THREAD_INFO_MEM_SIZE:
 .word AUDIO_THREAD_MEM_SIZE
+
+.align 0x10
+AUDIOBANK_TABLE_EXTENDED:
+.area 0xA00, 0
+.endarea
+
+FONTLOADSTATUS_EXTENDED:
+.area 0xA0, 0
+.endarea
+
+.align 0x10
+; Hack for when AudioLoad_SyncLoadFont checks fontLoadStatus
+; Put the address to load into T6
+AudioLoad_SyncLoadFont_StatusHack:
+    addiu   a1, a1, 0x5630 ; Replaced code
+    li      t6, FONTLOADSTATUS_EXTENDED
+    jr      ra
+    addu    t6, t6, v0
+
 
 //used to calculate the remaining free size of the audio thread heap
 get_audio_pointers:

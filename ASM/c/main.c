@@ -19,6 +19,8 @@
 #include "weather.h"
 #include "textures.h"
 #include "scene.h"
+#include "music.h"
+#include "uninvertYaxis.h"
 #include "usb.h"
 
 void Gameplay_InitSkybox(z64_game_t* globalCtx, int16_t skyboxId);
@@ -40,12 +42,19 @@ void before_game_state_update() {
     update_misc_colors();
     update_hud_colors();
     process_extern_ctxt();
+    manage_music_changes();
+    manage_uninvert_yaxis();
 }
 
 void after_game_state_update() {
-    draw_dungeon_info(&(z64_ctxt.gfx->overlay));
-    draw_triforce_count(&(z64_ctxt.gfx->overlay));
-    draw_illegal_model_text(&(z64_ctxt.gfx->overlay));
+    // Checks if the prerender screen is being drawn before drawing new HUD things.
+    // Else this will cause graphical and/or lag issues on some emulators when pausing.
+    if (R_PAUSE_BG_PRERENDER_STATE != PAUSE_BG_PRERENDER_PROCESS) {
+        draw_dungeon_info(&(z64_ctxt.gfx->overlay));
+        draw_triforce_count(&(z64_ctxt.gfx->overlay));
+        draw_silver_rupee_count(&z64_game, &(z64_ctxt.gfx->overlay));
+        draw_illegal_model_text(&(z64_ctxt.gfx->overlay));
+    }
     give_ganon_boss_key();
     usb_process();
 }
