@@ -624,6 +624,7 @@ struct {
   u32 mem16;
   u32 mem8;
   u32 outgoing_key;
+  u32 inventory;
 
   u32 outgoing_item : 16;
   u32 outgoing_player : 16;
@@ -676,6 +677,7 @@ enum USB_COMMANDS {
   USB_CMD_OUTGOING,
   USB_CMD_INCOMING,
   USB_CMD_PLAYER,
+  USB_CMD_INVENTORY,
   USB_CMD_SETTINGS,
   USB_CMD_PAUSE_WRITES,
   USB_CMD_PACKET_RECEIVED,
@@ -697,12 +699,16 @@ enum USB_COMMANDS {
 
 enum SETTINGS {
   SETTING_ANTIALIAS = 0x01,
+  SETTING_MW_SEND_OWN_ITEMS = 0x02,
+  SETTING_MW_PROGRESSIVE_ITEMS = 0x04,
 };
 
 #define AA1 (*(vu32*)0x8000646C)
 #define AA2 (*(vu32*)0x8000649C)
 #define CRC1 (*(vu32*)0xB0000010)
 #define CRC2 (*(vu32*)0xB0000014)
+#define FILENAME1 (*(vu32*)(0x8011A5D0 + 0x24))
+#define FILENAME2 (*(vu32*)(0x8011A5D0 + 0x28))
 // #define MAGIC_CRC(array)  array[0] = (CRC1 & 0xFF000000) >> 24; \
 //                           array[1] = (CRC1 & 0x00FF0000) >> 16; \
 //                           array[2] = (CRC1 & 0x0000FF00) >> 8;  \
@@ -714,7 +720,7 @@ enum SETTINGS {
 // #define MAGIC(array)  {0, };MAGIC2(array);
 #define MAGIC(array) array[0]='O';array[1]='o';array[2]='T';array[3]='R';
 #define INTERNAL_COUNT (*(vu16*)(z64_file_addr + 0x90))
-#define USB_VERSION 2;
+#define USB_VERSION 3;
 extern u8 PLAYER_ID;
 extern u16 INCOMING_PLAYER;
 extern u16 INCOMING_ITEM;
@@ -722,6 +728,13 @@ extern u32 OUTGOING_KEY;
 extern u16 OUTGOING_ITEM;
 extern u16 OUTGOING_PLAYER;
 extern u8 PLAYER_NAMES[];
+extern u8 MW_SEND_OWN_ITEMS;
+extern u8 MW_PROGRESSIVE_ITEMS_ENABLE;
+extern u8 MW_PROGRESSIVE_ITEMS_STATE[];
+extern u8 VERSION_STRING_TXT[];
+extern u8 WORLD_STRING_TXT[];
+extern u8 TIME_STRING_TXT[];
+extern u8 CFG_FILE_SELECT_HASH[];
 
 void usb_initialize() {
   __init_interrupts();
@@ -838,8 +851,17 @@ bool usb_process_in_out(bool in_game, bool transitioning) {
           }
           break;
         }
+        case USB_CMD_INVENTORY: {
+          if (USB_SIZE >= 10) {
+            u16 id = 4*USB_READ_BUFFER[5];
+            for (u8 i = 0; i < 4; i++) MW_PROGRESSIVE_ITEMS_STATE[id+i] = USB_READ_BUFFER[i+6];
+          }
+          break;
+        }
         case USB_CMD_SETTINGS: {
           usb_vars.settings = USB_READ_BUFFER[5];
+          MW_SEND_OWN_ITEMS = (usb_vars.settings & SETTING_MW_SEND_OWN_ITEMS) ? 1 : 0;
+          MW_PROGRESSIVE_ITEMS_ENABLE = (usb_vars.settings & SETTING_MW_PROGRESSIVE_ITEMS) ? 1 : 0;
           break;
         }
         case USB_CMD_PAUSE_WRITES: {
@@ -997,7 +1019,23 @@ bool usb_process_in_out(bool in_game, bool transitioning) {
         USB_WRITE_BUFFER[14] = (CRC2 & 0x00FF0000) >> 16;
         USB_WRITE_BUFFER[15] = (CRC2 & 0x0000FF00) >> 8;
         USB_WRITE_BUFFER[16] = (CRC2 & 0x000000FF);
-        usb_write(&USB_WRITE_BUFFER, 32);
+        USB_WRITE_BUFFER[17] = (FILENAME1 & 0xFF000000) >> 24;
+        USB_WRITE_BUFFER[18] = (FILENAME1 & 0x00FF0000) >> 16;
+        USB_WRITE_BUFFER[19] = (FILENAME1 & 0x0000FF00) >> 8;
+        USB_WRITE_BUFFER[20] = (FILENAME1 & 0x000000FF);
+        USB_WRITE_BUFFER[21] = (FILENAME2 & 0xFF000000) >> 24;
+        USB_WRITE_BUFFER[22] = (FILENAME2 & 0x00FF0000) >> 16;
+        USB_WRITE_BUFFER[23] = (FILENAME2 & 0x0000FF00) >> 8;
+        USB_WRITE_BUFFER[24] = (FILENAME2 & 0x000000FF);
+        for (int i = 0; i < 0x24; i++) USB_WRITE_BUFFER[25+i] = VERSION_STRING_TXT[i];
+        for (int i = 0; i < 0x24; i++) USB_WRITE_BUFFER[61+i] = TIME_STRING_TXT[i];
+        for (int i = 0; i < 0x10; i++) USB_WRITE_BUFFER[97+i] = WORLD_STRING_TXT[i];
+        for (int i = 0; i < 0x05; i++) USB_WRITE_BUFFER[113+i] = CFG_FILE_SELECT_HASH[i];
+        USB_WRITE_BUFFER[118] = (usb_vars.inventory & 0xFF000000) >> 24;
+        USB_WRITE_BUFFER[119] = (usb_vars.inventory & 0x00FF0000) >> 16;
+        USB_WRITE_BUFFER[120] = (usb_vars.inventory & 0x0000FF00) >> 8;
+        USB_WRITE_BUFFER[121] = (usb_vars.inventory & 0x000000FF);
+        usb_write(&USB_WRITE_BUFFER, 124);
         if (!usb_vars.was_in_game) usb_vars.sendSpawn = true;
       }
       else loop = false;
@@ -1324,6 +1362,28 @@ void usb_process() {
       OUTGOING_PLAYER = 0;
       usb_vars.outgoing_timer = 0;
     }
+    u32 inventory = 0;
+    u8 val = (*(vu8*)(0x8011A64D));
+    inventory |= (val == 0x0A ? 1 : (val == 0x0B ? 2 : 0)) <<  0; // hookshot
+    val = (*(vu8*)(0x8011A673));
+    inventory |=                       ((val & 0xC0) >> 6) <<  2; // strength
+    inventory |=                       ((val & 0x18) >> 3) <<  4; // bomb bag
+    inventory |=                       ((val & 0x03) >> 0) <<  6; // bow
+    val = (*(vu8*)(0x8011A672));
+    inventory |=                       ((val & 0xC0) >> 6) <<  8; // slingshot
+    inventory |=                       ((val & 0x30) >> 4) << 10; // wallet
+    inventory |=                       ((val & 0x06) >> 1) << 12; // scale
+    val = (*(vu8*)(0x8011A671));
+    inventory |=                       ((val & 0x30) >> 4) << 14; // nuts
+    val = (val & 0x0E) >> 1;
+    if (val == 5) val = 2;
+    inventory |=                                       val << 16; // sticks
+    inventory |=                     (*(vu8*)(0x8011A602)) << 18; // magic
+    val = (*(vu8*)(0x8011A64B));
+    inventory |= (val == 0x07 ? 1 : (val == 0x08 ? 2 : 0)) << 20; // ocarina
+    val = (*(vu8*)(0x8011A64C));
+    inventory |=                   ((val == 0x09) ? 1 : 0) << 22; // bombchu bag
+    if (inventory != usb_vars.inventory) usb_vars.inventory = inventory;
   }
   u32 timeout = 0;
   bool transitioning = stateFrames < 20 || nextEntranceIndex != usb_vars.lastEntranceIndex;
