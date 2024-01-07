@@ -804,7 +804,7 @@ void usb_reset_vars() {
   for (int i = 0; i < USB_MEMORY_SIZE; i++) usb_vars.memory[i] = 0x100;
 }
 
-bool usb_process_in_out(bool in_game, bool transitioning) {
+bool usb_process_in_out(bool in_game, bool transitioning, u32 inventory) {
   bool loop = true;
   if (usb_poll() & USB_CAN_READ) {
     if (
@@ -1068,7 +1068,16 @@ bool usb_process_in_out(bool in_game, bool transitioning) {
     }
     else if (!transitioning) {
       MAGIC(USB_WRITE_BUFFER);
-      if (usb_vars.mem8) {
+      if (usb_vars.inventory != inventory) {
+        usb_vars.inventory = inventory;
+        USB_WRITE_BUFFER[ 4] = USB_CMD_INVENTORY;
+        USB_WRITE_BUFFER[ 5] = (inventory & 0xFF000000) >> 24;
+        USB_WRITE_BUFFER[ 6] = (inventory & 0x00FF0000) >> 16;
+        USB_WRITE_BUFFER[ 7] = (inventory & 0x0000FF00) >> 8;
+        USB_WRITE_BUFFER[ 8] = (inventory & 0x000000FF);
+        usb_write(&USB_WRITE_BUFFER, 16);
+      }
+      else if (usb_vars.mem8) {
         USB_WRITE_BUFFER[ 4] = USB_CMD_U8;
         USB_WRITE_BUFFER[ 5] = usb_vars.mem8_sid;
         USB_WRITE_BUFFER[ 6] = (usb_vars.mem8 & 0xFF000000) >> 24;
@@ -1349,6 +1358,7 @@ void usb_process() {
   u16 nextEntranceIndex = (*(vu16*)(0x801DA2BA));
   u32 stateFrames = (*(vu32*)(0x801C853C));
   if (stateFrames < 20 && nextEntranceIndex != usb_vars.lastEntranceIndex) usb_vars.lastEntranceIndex = nextEntranceIndex;
+  u32 inventory = 0;
   if (in_game) {
     if (usb_vars.outgoing_key) {
       if (usb_vars.outgoing_timer++ > 20) usb_vars.outgoing_timer = 0;
@@ -1362,7 +1372,6 @@ void usb_process() {
       OUTGOING_PLAYER = 0;
       usb_vars.outgoing_timer = 0;
     }
-    u32 inventory = 0;
     u8 val = (*(vu8*)(0x8011A64D));
     inventory |= (val == 0x0A ? 1 : (val == 0x0B ? 2 : 0)) <<  0; // hookshot
     val = (*(vu8*)(0x8011A673));
@@ -1383,12 +1392,11 @@ void usb_process() {
     inventory |= (val == 0x07 ? 1 : (val == 0x08 ? 2 : 0)) << 20; // ocarina
     val = (*(vu8*)(0x8011A64C));
     inventory |=                   ((val == 0x09) ? 1 : 0) << 22; // bombchu bag
-    if (inventory != usb_vars.inventory) usb_vars.inventory = inventory;
   }
   u32 timeout = 0;
   bool transitioning = stateFrames < 20 || nextEntranceIndex != usb_vars.lastEntranceIndex;
   while (true) {
-    if (usb_process_in_out(in_game, transitioning)) timeout = 0;
+    if (usb_process_in_out(in_game, transitioning, inventory)) timeout = 0;
     else if (!usb_vars.packet_sent || timeout++ >= 8192) {
       usb_vars.packet_sent = false;
       break;
