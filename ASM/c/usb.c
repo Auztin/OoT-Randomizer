@@ -733,7 +733,6 @@ extern u8 MW_PROGRESSIVE_ITEMS_ENABLE;
 extern u8 MW_PROGRESSIVE_ITEMS_STATE[];
 extern u8 VERSION_STRING_TXT[];
 extern u8 WORLD_STRING_TXT[];
-extern u8 TIME_STRING_TXT[];
 extern u8 CFG_FILE_SELECT_HASH[];
 
 void usb_initialize() {
@@ -1028,14 +1027,13 @@ bool usb_process_in_out(bool in_game, bool transitioning, u32 inventory) {
         USB_WRITE_BUFFER[23] = (FILENAME2 & 0x0000FF00) >> 8;
         USB_WRITE_BUFFER[24] = (FILENAME2 & 0x000000FF);
         for (int i = 0; i < 0x24; i++) USB_WRITE_BUFFER[25+i] = VERSION_STRING_TXT[i];
-        for (int i = 0; i < 0x24; i++) USB_WRITE_BUFFER[61+i] = TIME_STRING_TXT[i];
-        for (int i = 0; i < 0x10; i++) USB_WRITE_BUFFER[97+i] = WORLD_STRING_TXT[i];
-        for (int i = 0; i < 0x05; i++) USB_WRITE_BUFFER[113+i] = CFG_FILE_SELECT_HASH[i];
-        USB_WRITE_BUFFER[118] = (usb_vars.inventory & 0xFF000000) >> 24;
-        USB_WRITE_BUFFER[119] = (usb_vars.inventory & 0x00FF0000) >> 16;
-        USB_WRITE_BUFFER[120] = (usb_vars.inventory & 0x0000FF00) >> 8;
-        USB_WRITE_BUFFER[121] = (usb_vars.inventory & 0x000000FF);
-        usb_write(&USB_WRITE_BUFFER, 124);
+        for (int i = 0; i < 0x10; i++) USB_WRITE_BUFFER[61+i] = WORLD_STRING_TXT[i];
+        for (int i = 0; i < 0x05; i++) USB_WRITE_BUFFER[77+i] = CFG_FILE_SELECT_HASH[i];
+        USB_WRITE_BUFFER[82] = (usb_vars.inventory & 0xFF000000) >> 24;
+        USB_WRITE_BUFFER[83] = (usb_vars.inventory & 0x00FF0000) >> 16;
+        USB_WRITE_BUFFER[84] = (usb_vars.inventory & 0x0000FF00) >> 8;
+        USB_WRITE_BUFFER[85] = (usb_vars.inventory & 0x000000FF);
+        usb_write(&USB_WRITE_BUFFER, 88);
         if (!usb_vars.was_in_game) usb_vars.sendSpawn = true;
       }
       else loop = false;
