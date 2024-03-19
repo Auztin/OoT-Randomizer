@@ -572,6 +572,7 @@ u8 (*usb_readPointer)();
 u8 (*usb_pollPointer)();
 
 u8 usb_write(void* data, u32 len) {
+  // len needs to be: at least 16, a multiple of 4, 4 higher than needed (padding for 64drive)
   if (usb_cart == CART_NONE) return 1;
   return usb_writePointer(data, len);
 }
@@ -1033,7 +1034,7 @@ bool usb_process_in_out(bool in_game, bool transitioning, u32 inventory) {
         USB_WRITE_BUFFER[83] = (usb_vars.inventory & 0x00FF0000) >> 16;
         USB_WRITE_BUFFER[84] = (usb_vars.inventory & 0x0000FF00) >> 8;
         USB_WRITE_BUFFER[85] = (usb_vars.inventory & 0x000000FF);
-        usb_write(&USB_WRITE_BUFFER, 88);
+        usb_write(&USB_WRITE_BUFFER, 92);
         if (!usb_vars.was_in_game) usb_vars.sendSpawn = true;
       }
       else loop = false;
@@ -1061,7 +1062,7 @@ bool usb_process_in_out(bool in_game, bool transitioning, u32 inventory) {
       USB_WRITE_BUFFER[10] = (usb_vars.outgoing_item & 0x00FF);
       USB_WRITE_BUFFER[11] = (usb_vars.outgoing_player & 0xFF00) >> 8;
       USB_WRITE_BUFFER[12] = (usb_vars.outgoing_player & 0x00FF);
-      usb_write(&USB_WRITE_BUFFER, 16);
+      usb_write(&USB_WRITE_BUFFER, 20);
       usb_vars.outgoing_timer++;
     }
     else if (!transitioning) {
@@ -1109,7 +1110,7 @@ bool usb_process_in_out(bool in_game, bool transitioning, u32 inventory) {
         USB_WRITE_BUFFER[11] = (*(vu8*)(usb_vars.mem32+1));
         USB_WRITE_BUFFER[12] = (*(vu8*)(usb_vars.mem32+2));
         USB_WRITE_BUFFER[13] = (*(vu8*)(usb_vars.mem32+3));
-        usb_write(&USB_WRITE_BUFFER, 16);
+        usb_write(&USB_WRITE_BUFFER, 20);
         usb_vars.mem32 = 0;
       }
       else if (usb_vars.actor_num) {
@@ -1146,6 +1147,7 @@ bool usb_process_in_out(bool in_game, bool transitioning, u32 inventory) {
           }
         }
         if (USB_WRITE_BUFFER[6]) {
+          bufferOffset += 4;
           while (bufferOffset < 16 || bufferOffset % 4) bufferOffset++;
           usb_write(&USB_WRITE_BUFFER, bufferOffset);
           if (usb_vars.actor_num == 0) {
@@ -1182,6 +1184,7 @@ bool usb_process_in_out(bool in_game, bool transitioning, u32 inventory) {
         if (bufferOffset > 12) {
           USB_WRITE_BUFFER[10] = ((bufferOffset-12) & 0x0000FF00) >> 8;
           USB_WRITE_BUFFER[11] = ((bufferOffset-12) & 0x000000FF);
+          bufferOffset += 4;
           while (bufferOffset < 16 || bufferOffset % 4) bufferOffset++;
           usb_write(&USB_WRITE_BUFFER, bufferOffset);
           usb_vars.sendRangeDone = true;
@@ -1272,7 +1275,8 @@ bool usb_process_in_out(bool in_game, bool transitioning, u32 inventory) {
           }
         }
         if (bufferOffset > 6) {
-          while (bufferOffset < 16 || bufferOffset % 4) bufferOffset++;
+          bufferOffset += 4;
+          while (bufferOffset < 16 || bufferOffset % 16) bufferOffset++;
           usb_write(&USB_WRITE_BUFFER, bufferOffset);
           usb_vars.sendDone = true;
         }
