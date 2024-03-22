@@ -634,7 +634,7 @@ class SettingInfos:
                                          'shuffle_dungeon_entrances', 'shuffle_overworld_entrances', 'shuffle_gerudo_valley_river_exit', 'owl_drops',
                                          'warp_songs', 'spawn_positions', 'mq_dungeons_mode', 'mq_dungeons_specific',
                                          'mq_dungeons_count', 'shuffle_bosses', 'dungeon_shortcuts', 'deadly_bonks',
-                                         'shuffle_freestanding_items', 'shuffle_pots', 'shuffle_crates', 'shuffle_beehives', 'shuffle_silver_rupees']},
+                                         'shuffle_freestanding_items', 'shuffle_pots', 'shuffle_crates', 'shuffle_beehives', 'shuffle_silver_rupees', 'shuffle_wonderitems']},
             'none':       {'settings': ['allowed_tricks', 'logic_no_night_tokens_without_suns_song', 'reachable_locations']},
         },
         shared         = True,
@@ -1463,9 +1463,9 @@ class SettingInfos:
             'remove':      'Remove',
             'vanilla':     'Vanilla Locations',
             'dungeon':     'Own Dungeon',
+            'regional':    'Regional',
             'overworld':   'Overworld Only',
             'any_dungeon': 'Any Dungeon',
-            'regional':    'Regional',
             'anywhere':    'Anywhere',
         },
         gui_tooltip    = '''\
@@ -1491,16 +1491,16 @@ class SettingInfos:
             'Own Dungeon': Silver Rupees can only appear
             in their respective dungeon.
 
+            'Regional': Silver Rupees can only appear in regions
+            near the original dungeon (including the dungeon
+            itself or other dungeons in the region).
+            <a href="https://wiki.ootrandomizer.com/index.php?title=Hints#Hint_Regions" target="_blank">The Wiki has a list of corresponding regions here.</a>
+
             'Overworld Only': Silver Rupees can only appear
             outside of dungeons.
 
             'Any Dungeon': Silver Rupees can only appear in a
             dungeon, but not necessarily the dungeon they are for.
-
-            'Regional': Silver Rupees can only appear in regions
-            near the original dungeon (including the dungeon
-            itself or other dungeons in the region).
-            <a href="https://wiki.ootrandomizer.com/index.php?title=Hints#Hint_Regions" target="_blank">The Wiki has a list of corresponding regions here.</a>
 
             'Anywhere': Silver Rupees can appear
             anywhere in the world.
@@ -1536,9 +1536,9 @@ class SettingInfos:
         ''',
         shared         = True,
         disable        = {
-            'off': {'settings' : ['silver_rupee_pouches']},
-            'all': {'settings' : ['silver_rupee_pouches']},
-            'random': {'setings' : ['silver_rupee_pouches']},
+            'off':    {'settings' : ['silver_rupee_pouches']},
+            'all':    {'settings' : ['silver_rupee_pouches']},
+            'random': {'settings' : ['silver_rupee_pouches']},
         },
         gui_params     = {
             "hide_when_disabled": True,
@@ -2679,6 +2679,36 @@ class SettingInfos:
         },
     )
 
+    shuffle_wonderitems = Checkbutton(
+        gui_text       = 'Shuffle Wonderitems',
+        gui_tooltip    = '''\
+            Enabling will shuffle drops from wonderitems.
+
+            Wonderitems are invisible items in the game that will drop an
+            item under a certain condition. These items will be marked in the game with a
+            sparkle effect when shuffled so they can be easily found. There
+            are 4 kinds of shuffled wonderitems.
+
+            Proximity Drop (Yellow): Gives an item when Link touches it.
+
+            Interact Switch (Red): Drops an item when hit with a certain damage type.
+                             (Sword, bow, slingshot, or hookshot)
+
+            Free Multitag (Blue): Gives an item when a certain set of tag points
+                           are touched. The only free multitag is the stepping stones
+                           in Kokiri Forest.
+
+            Ordered Multitag (Cyan): Gives an item when a set of tag points are touched
+                              in a specific order. The only ordered multitag is the
+                              grass stepping stones in Kokiri Forest.
+        ''',
+        default        = False,
+        shared         = True,
+        gui_params     = {
+            'randomize_key': 'randomize_settings',
+        },
+    )
+
     shuffle_kokiri_sword = Checkbutton(
         gui_text       = 'Shuffle Kokiri Sword',
         gui_tooltip    = '''\
@@ -2805,9 +2835,9 @@ class SettingInfos:
         ''',
         default        = 'off',
         choices        = {
-            'off': 'Off',
+            'off':     'Off',
             'vanilla': 'Vanilla Behavior',
-            'easy': 'Easier Behavior'
+            'easy':    'Easier Behavior',
         },
         shared         = True,
         gui_params     = {
@@ -2815,7 +2845,7 @@ class SettingInfos:
             'distribution': [
                 ('off',          1),
                 ('vanilla',      1),
-                ('easy',         1)
+                ('easy',         1),
             ],
         },
     )
@@ -3230,19 +3260,25 @@ class SettingInfos:
         },
     )
 
-    minor_items_as_major_chest = Checkbutton(
+    minor_items_as_major_chest = MultipleSelect(
         gui_text       = 'Minor Items in Big/Gold chests',
+        choices        = {
+            'bombchus': 'Bombchus',
+            'shields':  'Deku & Hylian Shields',
+            'capacity': 'Deku Stick & Nut Capacity',
+        },
         gui_tooltip    = '''\
-            Chests with Hylian Shield, Deku Shield, or
-            Bombchus will appear in Big and/or Gold chests,
-            depending on the Chest Appearance Matches
-            Contents setting. Bombchus are always in big
-            chests if Add Bombchu Bag and Drops is on.
+            Chests with Hylian or Deku Shields, Deku Stick
+            or Nut Capacity, or Bombchus will appear in Big
+            and/or Gold chests, depending on the Chest
+            Appearance Matches Contents setting. Bombchus
+            are always in big chests if Add Bombchu Bag and
+            Drops is on.
         ''',
         shared         = True,
-        disabled_default = False,
-        gui_params       = {
-            "hide_when_disabled" : True
+        default        = [],
+        gui_params     = {
+            "hide_when_disabled" : True,
         },
     )
 
@@ -3720,7 +3756,7 @@ class SettingInfos:
         default        = 'right',
         choices        = {
             'off':   'Off',
-            'left': 'On the left',
+            'left':  'On the left',
             'right': 'On the right',
         },
     )
